@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "394573353933",
+    "project_id": "beemo-ccbba",
+    "storage_bucket": "beemo-ccbba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:394573353933:android:1e555da94ae4339aa6aa84",
+        "android_client_info": {
+          "package_name": "com.example.teemo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBFZPmOj0GAhd2uiD-1qhAsf0VEIOMuIc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

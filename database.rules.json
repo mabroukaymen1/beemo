@@ -1,0 +1,181 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    
+    "device_states": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        "$placeId": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid",
+          "$deviceId": {
+            ".read": "auth != null && auth.uid == $uid",
+            ".write": "auth != null && auth.uid == $uid",
+            "isOn": { ".validate": "newData.isBoolean()" },
+            "status": { ".validate": "newData.isString()" },
+            "properties": {
+              ".read": "auth != null && auth.uid == $uid",
+              ".write": "auth != null && auth.uid == $uid"
+            },
+            "lastUpdated": { ".validate": "true" }
+          }
+        }
+      }
+    },
+
+    "robot_connections": {
+      "$userId": {
+        ".read": "auth != null && $userId === auth.uid",
+        ".write": "auth != null && ($userId === auth.uid || root.child('robots').child(newData.child('robotId').val()).child('connectedUser').val() === auth.uid)",
+        
+        "robotId": { ".validate": "newData.isString()" },
+        "status": { 
+          ".validate": "newData.isString() && newData.val().matches(/^(connected|disconnected|not_connected|paired)$/)"
+        },
+        "lastSeen": { ".validate": "newData.isNumber() && newData.val() <= now" },
+        "isOnline": { ".validate": "newData.isBoolean()" },
+        "data": {
+          ".validate": "newData.hasChildren(['name'])",
+          "name": { ".validate": "newData.isString()" },
+          "type": { ".validate": "newData.isString()" }
+        }
+      }
+    },
+
+    "robot_commands": {
+      "$robotId": {
+        ".read": "auth != null && (root.child('robots').child($robotId).child('connectedUser').val() === auth.uid || root.child('robots').child($robotId).child('isPaired').val() === true)",
+        ".write": "auth != null && root.child('robots').child($robotId).child('connectedUser').val() === auth.uid",
+        "$commandId": {
+          "type": { ".validate": "newData.isString() && newData.val().matches(/^(power|emotion|movement)$/)" },
+          "value": { ".validate": "true" },
+          "timestamp": { ".validate": "newData.isNumber() && newData.val() <= now" },
+          "userId": { ".validate": "newData.val() === auth.uid" }
+        }
+      }
+    },
+
+    "device_metrics": {
+      "$userId": {
+        "$deviceId": {
+          ".read": "auth != null && $userId === auth.uid",
+          ".write": "auth != null && ($userId === auth.uid || root.child('robot_connections').child($userId).child('robotId').val() === auth.uid)",
+          
+          "usage": {
+            "$timestamp": {
+              ".validate": "newData.hasChildren(['value', 'type'])",
+              "value": { ".validate": "newData.isNumber()" },
+              "type": { ".validate": "newData.isString()" },
+              "timestamp": { ".validate": "newData.isNumber() && newData.val() <= now" }
+            }
+          },
+          "lastUpdate": { ".validate": "newData.isNumber() && newData.val() <= now" }
+        }
+      }
+    },
+
+    "device_configurations": {
+      "$deviceId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || data.child('ownerId').val() === auth.uid)",
+        
+        "ownerId": { ".validate": "newData.isString()" },
+        "type": { ".validate": "newData.isString()" },
+        "category": { ".validate": "newData.isString()" },
+        "status": { 
+          ".validate": "newData.isString() && newData.val().matches(/^(pending|configured|error)$/)"
+        },
+        "registrationTime": { ".validate": "newData.isNumber() && newData.val() <= now" }
+      }
+    },
+
+    "device_configs": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        "$deviceId": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid"
+        }
+      }
+    },
+
+    "robots": {
+      "$robotId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || !data.child('connectedUser').exists() || data.child('connectedUser').val() === auth.uid)",
+        
+        "status": { 
+          ".validate": "newData.isString() && newData.val().matches(/^(not_connected|connected|paired|disconnected)$/)"
+        },
+        "connectedUser": { ".validate": "newData.isString() || newData.val() === null" },
+        "lastSeen": { ".validate": "newData.isNumber() && newData.val() <= now" },
+        "type": { ".validate": "newData.isString()" },
+        "name": { ".validate": "newData.isString()" },
+        "isOnline": { ".validate": "newData.isBoolean()" },
+        "power": { ".validate": "newData.isBoolean()" },
+        "lastUpdated": { ".validate": "newData.isNumber() && newData.val() <= now" },
+        "lastUpdatedBy": { ".validate": "newData.isString() && newData.val() === auth.uid" }
+      }
+    },
+
+    "beemo_robots": {
+      "$robotId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "status": {
+          ".validate": "newData.isString() && newData.val().matches(/^(active|idle|busy|offline)$/)"
+        },
+        "currentEmotion": {
+          ".validate": "newData.isString()"
+        },
+        "lastCommand": {
+          ".validate": "newData.hasChildren(['timestamp', 'type'])",
+          "timestamp": { ".validate": "newData.isNumber()" },
+          "type": { ".validate": "newData.isString()" }
+        },
+        "devices": {
+          "$deviceId": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            "status": { ".validate": "newData.isString()" },
+            "isOn": { ".validate": "newData.isBoolean()" },
+            "lastUpdated": { ".validate": "newData.isNumber()" },
+            "type": { ".validate": "newData.isString()" }
+          }
+        },
+        "interactions": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "$interactionId": {
+            ".validate": "newData.hasChildren(['timestamp', 'type', 'data'])",
+            "timestamp": { ".validate": "newData.isNumber()" },
+            "type": { ".validate": "newData.isString()" },
+            "data": {
+              ".validate": "newData.hasChildren()",
+              "$key": { ".validate": "true" }
+            }
+          }
+        }
+      }
+    },
+
+    "_ping_robot_startup": {
+      "$robotId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "status": { 
+          ".validate": "newData.isString() && newData.val().matches(/^(connecting|connected|disconnected|error)$/)" 
+        },
+        "timestamp": { 
+          ".validate": "newData.isNumber() && newData.val() <= now" 
+        },
+        "userId": { 
+          ".validate": "newData.isString() && newData.val() === auth.uid" 
+        }
+      }
+    }
+  }
+}

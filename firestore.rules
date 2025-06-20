@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read and write their own user data
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow users to manage their own settings
+      match /settings/{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      
+      // Allow users to manage their own places
+      match /places/{placeId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        
+        // Allow users to manage devices in their places
+        match /devices/{deviceId} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+      
+      // Allow users to manage their own logs
+      match /logs/{logId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Global logs collection - allow authenticated users to read and create
+    match /logs/{logId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Settings collection for user preferences
+    match /settings/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow authenticated users to read and write automations documents.
+    match /automations/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read and create scheduled notifications.
+    match /scheduled_notifications/{docId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+    }
+
+    // Allow authenticated users to read and write device configurations
+    match /device_configurations/{deviceId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Updated device rules to include name validation
+    match /users/{userId}/places/{placeId}/devices/{deviceId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 50
+        && request.resource.data.name.size() > 0;
+      allow update: if request.auth != null 
+        && request.auth.uid == userId
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['name']) 
+            || (request.resource.data.name is string 
+                && request.resource.data.name.size() <= 50
+                && request.resource.data.name.size() > 0));
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Device configurations with name validation
+    match /device_configurations/{deviceId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 50
+        && request.resource.data.name.size() > 0;
+      allow update: if request.auth != null 
+        && (resource.data.ownerId == request.auth.uid)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['name']) 
+            || (request.resource.data.name is string 
+                && request.resource.data.name.size() <= 50
+                && request.resource.data.name.size() > 0));
+    }
+    
+    // Allow users to manage their own sessions and chat messages
+    match /users/{userId}/companies/{companyId}/sessions/{sessionId} {
+      // TEMPORARY: Allow any authenticated user to read/write for development
+      allow read, write: if request.auth != null;
+
+      // Messages subcollection
+      match /messages/{messageId} {
+        // TEMPORARY: Allow any authenticated user to read/write for development
+        allow read, write: if request.auth != null;
+      }
+    }
+
+    // Beemo command history collection
+    match /command_history/{commandId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.user_id == request.auth.uid
+        && request.resource.data.command is string
+        && request.resource.data.timestamp is timestamp;
+      allow update: if request.auth != null 
+        && resource.data.user_id == request.auth.uid;
+      allow delete: if request.auth != null 
+        && resource.data.user_id == request.auth.uid;
+    }
+
+    // Beemo emotion states collection
+    match /emotion_states/{stateId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.emotion is string
+        && request.resource.data.timestamp is timestamp;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Beemo emotion statistics collection
+    match /emotion_stats/{emotionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.data.count is number
+        && request.resource.data.last_triggered is timestamp;
+    }
+    
+    // Device states in Realtime Database mirror
+    match /device_states/{userId}/{locationId}/{deviceId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Platform responses collection for Beemo (save platform responses per user)
+    match /platforme/{docId} {
+      allow get: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow list: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.user_id == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.user_id == request.auth.uid;
+    }
+
+    // Beemo robot status collection (allow user to read/write their own robot status)
+    match /beemo_status/{statusId} {
+      allow read: if request.auth != null && statusId.startsWith(request.auth.uid + "_");
+      allow write: if request.auth != null && statusId.startsWith(request.auth.uid + "_");
+      // Optionally, restrict fields (e.g., only allow certain fields to be updated)
+    }
+  }
+}

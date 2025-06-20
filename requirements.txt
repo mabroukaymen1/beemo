@@ -1,0 +1,8 @@
+paho-mqtt==1.6.1
+RPi.GPIO==0.7.1
+pillow==9.5.0
+qrcode==7.4.2
+python-dotenv==1.0.0
+loguru==0.7.0
+schedule==1.2.0
+requests==2.31.0
